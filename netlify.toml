@@ -2,12 +2,6 @@
   command = "npm run build"
   publish = "out"
 
-[[redirects]]
-  from = "/api/*"
-  to = "http://173.249.54.62:25566/api/:splat"
-  status = 200
-  force = true
-
 [[headers]]
   for = "/*"
   [headers.values]
@@ -16,4 +10,4 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     X-Powered-By = ""
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
-    Content-Security-Policy = "default-src 'self'; connect-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none';"
+    Content-Security-Policy = "default-src 'self'; connect-src 'self' https://api.authrd.lat; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; frame-ancestors 'none';"
