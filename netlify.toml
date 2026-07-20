@@ -3,7 +3,7 @@
   publish = ".next"
 
 [build.environment]
-  NEXT_PUBLIC_API_URL = "https://auchrd.netlify.app/api"
+  NEXT_PUBLIC_API_URL = "https://authrd.netlify.app/api"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

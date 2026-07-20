@@ -8,7 +8,7 @@ function getApiUrl() {
     return `${window.location.origin}/api`;
   }
 
-  return 'https://auchrd.netlify.app/api';
+  return 'https://authrd.netlify.app/api';
 }
 
 type ApiOptions = RequestInit & { token?: string | null };
