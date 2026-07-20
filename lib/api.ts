@@ -8,7 +8,7 @@ function getApiUrl() {
     return `${window.location.origin}/api`;
   }
 
-  return 'https://api.authrd.lat/api';
+  return 'https://authrd-api.up.railway.app/api';
 }
 
 type ApiOptions = RequestInit & { token?: string | null };
