@@ -1,0 +1,65 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  @apply border-border;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply text-white antialiased;
+  /* Slight dark-blue gradient instead of flat black */
+  background-image: linear-gradient(180deg, #071018 0%, #071c26 100%);
+  background-color: #071018;
+}
+
+::selection {
+  @apply bg-primary/30 text-white;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, .03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, .03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.bg-blue-glow {
+  background-image: radial-gradient(ellipse at center, rgba(59, 130, 246, .15) 0, transparent 70%);
+}
+
+.card {
+  @apply rounded-[28px] border border-cyan-500/15 bg-gradient-to-br from-[#09131f] via-[#0c1f34] to-[#081523] p-6 shadow-[0_20px_60px_rgba(14,165,233,0.12),inset_0_0_0_1px_rgba(56,189,248,0.08)] backdrop-blur-xl;
+}
+
+.input {
+  @apply min-h-10 w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-white placeholder-muted transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50;
+}
+
+.label {
+  @apply mb-1 block text-sm font-medium text-muted-foreground;
+}
+
+/* Fix autofill del browser — evita el fondo blanco/amarillo en inputs */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px rgb(26 26 26) inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff;
+  border-color: rgb(42 42 42) !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgb(17 17 17); }
+::-webkit-scrollbar-thumb { background: rgb(34 34 34); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(51 51 51); }
