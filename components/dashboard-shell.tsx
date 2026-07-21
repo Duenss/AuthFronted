@@ -610,7 +610,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 </p>
               )}
             </div>
-            </div>
           )}
         </div>
 
