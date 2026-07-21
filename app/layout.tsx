@@ -1,15 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import Script from "next/script";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-  preload: true,
-});
 
 export const metadata: Metadata = {
   title: "AuthRD - License & Auth Management",
@@ -20,7 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className="dark">
-      <body className={inter.variable}>
+      <body>
         {/* Console & DevTools protection — only active in production */}
         <Script id="console-protection" strategy="beforeInteractive">{`
           (function() {
