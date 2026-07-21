@@ -14,52 +14,115 @@ html {
 
 body {
   @apply text-white antialiased;
-  /* Slight dark-blue gradient instead of flat black */
-  background-image: linear-gradient(180deg, #071018 0%, #071c26 100%);
-  background-color: #071018;
+  background-image: linear-gradient(180deg, #020c18 0%, #04111f 60%, #020c18 100%);
+  background-color: #020c18;
 }
 
 ::selection {
   @apply bg-primary/30 text-white;
 }
 
+/* ── Grid background ── */
 .bg-grid {
   background-image:
-    linear-gradient(rgba(255, 255, 255, .03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, .03) 1px, transparent 1px);
-  background-size: 32px 32px;
+    linear-gradient(rgba(0, 149, 255, .04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 149, 255, .04) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
+/* ── Glow radials ── */
 .bg-blue-glow {
-  background-image: radial-gradient(ellipse at center, rgba(59, 130, 246, .15) 0, transparent 70%);
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(0, 149, 255, .22) 0%, transparent 70%);
 }
 
+.bg-electric-glow {
+  background-image: radial-gradient(ellipse at center, rgba(0, 149, 255, .18) 0%, rgba(0, 80, 200, .08) 50%, transparent 75%);
+}
+
+/* ── Card ── */
 .card {
-  @apply rounded-[28px] border border-cyan-500/15 bg-gradient-to-br from-[#09131f] via-[#0c1f34] to-[#081523] p-6 shadow-[0_20px_60px_rgba(14,165,233,0.12),inset_0_0_0_1px_rgba(56,189,248,0.08)] backdrop-blur-xl;
+  @apply rounded-[28px] border border-electric/20 bg-gradient-to-br from-[#05111e] via-[#071929] to-[#050e1a] p-6;
+  box-shadow:
+    0 20px 60px rgba(0, 149, 255, 0.10),
+    0 0 0 1px rgba(0, 149, 255, 0.08) inset,
+    0 0 40px rgba(0, 149, 255, 0.04) inset;
+  backdrop-filter: blur(16px);
 }
 
+/* ── Input ── */
 .input {
-  @apply min-h-10 w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-white placeholder-muted transition focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/50;
+  @apply min-h-10 w-full rounded-xl border border-[#0f2a42] bg-[#040d16] px-3 py-2 text-white placeholder-[#2a4a6a] transition-all duration-200;
+  box-shadow: 0 0 0 0 rgba(0, 149, 255, 0);
+}
+.input:focus {
+  @apply outline-none border-electric;
+  box-shadow: 0 0 0 3px rgba(0, 149, 255, 0.15), 0 0 16px rgba(0, 149, 255, 0.1);
 }
 
 .label {
-  @apply mb-1 block text-sm font-medium text-muted-foreground;
+  @apply mb-1.5 block text-sm font-medium text-[#4a8ab0];
 }
 
-/* Fix autofill del browser — evita el fondo blanco/amarillo en inputs */
+/* ── Glow activity animations ── */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px 2px rgba(0, 149, 255, 0.4), 0 0 20px 4px rgba(0, 149, 255, 0.15); }
+  50%       { box-shadow: 0 0 14px 4px rgba(0, 149, 255, 0.7), 0 0 35px 8px rgba(0, 149, 255, 0.25); }
+}
+@keyframes glowPulseSm {
+  0%, 100% { box-shadow: 0 0 4px 1px rgba(0, 149, 255, 0.35); }
+  50%       { box-shadow: 0 0 10px 3px rgba(0, 149, 255, 0.65); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(0, 149, 255, 0.3); }
+  50%       { border-color: rgba(0, 149, 255, 0.7); }
+}
+
+.glow-pulse       { animation: glowPulse 2.5s ease-in-out infinite; }
+.glow-pulse-sm    { animation: glowPulseSm 2.5s ease-in-out infinite; }
+.animate-fadein-up { animation: fadeInUp 0.45s cubic-bezier(.22,1,.36,1) both; }
+.animate-fadein    { animation: fadeIn 0.3s ease both; }
+.border-glow-anim  { animation: borderGlow 2.5s ease-in-out infinite; }
+
+/* ── Electric border ── */
+.electric-border {
+  border: 1px solid rgba(0, 149, 255, 0.35);
+  box-shadow: 0 0 12px rgba(0, 149, 255, 0.15), inset 0 0 8px rgba(0, 149, 255, 0.04);
+}
+
+/* ── Auth card ── */
+.auth-card {
+  background: linear-gradient(145deg, #050f1c 0%, #071526 50%, #040d18 100%);
+  border: 1px solid rgba(0, 149, 255, 0.25);
+  border-radius: 32px;
+  box-shadow:
+    0 30px 80px rgba(0, 149, 255, 0.14),
+    0 0 0 1px rgba(0, 149, 255, 0.06) inset,
+    0 0 60px rgba(0, 100, 200, 0.06) inset;
+  backdrop-filter: blur(20px);
+}
+
+/* Autofill fix */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px rgb(26 26 26) inset !important;
+  -webkit-box-shadow: 0 0 0 1000px #040d16 inset !important;
   -webkit-text-fill-color: #ffffff !important;
   caret-color: #ffffff;
-  border-color: rgb(42 42 42) !important;
+  border-color: #0f2a42 !important;
   transition: background-color 9999s ease-in-out 0s;
 }
 
-/* Scrollbar personalizado */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: rgb(17 17 17); }
-::-webkit-scrollbar-thumb { background: rgb(34 34 34); border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: rgb(51 51 51); }
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #020c18; }
+::-webkit-scrollbar-thumb { background: #0a2035; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #0f2d48; }

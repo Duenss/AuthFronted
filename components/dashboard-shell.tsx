@@ -93,7 +93,71 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [newAppVersion, setNewAppVersion] = useState("1.0.0");
   const [creatingApp, setCreatingApp] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+
+  function openSettings() {
+    setProfileUsername(userInfo?.username || '');
+    setProfileEmail(userInfo?.email || '');
+    setProfileAvatar(userInfo?.avatar || '');
+    setSettingsTab('profile');
+    setShowSettingsPanel(true);
+  }
+
+  async function saveProfile() {
+    const token = getStoredToken();
+    if (!token) return;
+    setSavingProfile(true);
+    try {
+      const updated = await apiRequest<UserInfo>("/auth/me/update", {
+        method: "PUT",
+        token,
+        body: JSON.stringify({
+          username: profileUsername,
+          email: profileEmail,
+          avatar: profileAvatar,
+        }),
+      });
+      setUserInfo(updated);
+      toast.success("Perfil actualizado");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al guardar perfil");
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  async function savePassword() {
+    if (newPassword !== confirmNewPassword) {
+      toast.error("Las contraseñas no coinciden");
+      return;
+    }
+    const token = getStoredToken();
+    if (!token) return;
+    setSavingPassword(true);
+    try {
+      await apiRequest("/auth/me/password", {
+        method: "PUT",
+        token,
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      toast.success("Contraseña actualizada");
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al cambiar contraseña");
+    } finally {
+      setSavingPassword(false);
+    }
+  }
   const [settingsTab, setSettingsTab] = useState<'profile' | 'password' | 'danger'>('profile');
+  const [profileUsername, setProfileUsername] = useState('');
+  const [profileEmail, setProfileEmail] = useState('');
+  const [profileAvatar, setProfileAvatar] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [savingPassword, setSavingPassword] = useState(false);
   
   const appDropdownRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLDivElement>(null);
@@ -510,12 +574,28 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-white truncate">{userInfo?.username || "Usuario"}</p>
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-cyan-300 truncate">{roleLabel}</p>
+                  {/* Badge de rol — arriba */}
+                  {(() => {
+                    const role = userInfo?.role;
+                    const isTrial = role === "admin" && !!userInfo?.premiumTrialExpiresAt;
+                    let label = "Normal";
+                    let cls   = "bg-surface-3 text-muted-foreground border-border";
+                    if (role === "superadmin")            { label = "Super Admin";   cls = "bg-danger/10 text-danger border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.25)]"; }
+                    else if (role === "admin" && isTrial) { label = "Premium Trial"; cls = "bg-warning/10 text-warning border-warning/20"; }
+                    else if (role === "admin")            { label = "Premium";       cls = "bg-success/10 text-success border-success/20"; }
+                    else if (role === "manager")          { label = "Manager";       cls = "bg-primary/10 text-primary-light border-primary/20"; }
+                    return (
+                      <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold mb-1 ${cls}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${role === "superadmin" ? "bg-danger shadow-[0_0_6px_rgba(239,68,68,0.8)]" : "bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.6)]"}`} />
+                        {label}
+                      </span>
+                    );
+                  })()}
+                  <p className="text-base font-semibold text-white truncate leading-tight">{userInfo?.username || "Usuario"}</p>
                   <p className="text-xs text-muted truncate">{userInfo?.email || ""}</p>
                 </div>
                 <button
-                  onClick={() => setShowSettingsPanel(true)}
+                  onClick={() => openSettings()}
                   className="rounded-full border border-border bg-surface p-2 text-muted hover:text-white hover:border-cyan-400 transition-all duration-200"
                   title="Ajustes"
                 >
@@ -523,28 +603,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 </button>
               </div>
 
-              {(() => {
-                const role = userInfo?.role;
-                const isTrial = role === "admin" && !!userInfo?.premiumTrialExpiresAt;
-                let label = "Normal";
-                let cls   = "bg-surface-3 text-muted-foreground border-border";
-                if (role === "superadmin") { label = "Super Admin"; cls = "bg-danger/10 text-danger border-danger/20"; }
-                else if (role === "admin" && isTrial) { label = "Premium Trial"; cls = "bg-warning/10 text-warning border-warning/20"; }
-                else if (role === "admin") { label = "Premium"; cls = "bg-success/10 text-success border-success/20"; }
-                else if (role === "manager") { label = "Manager"; cls = "bg-primary/10 text-primary-light border-primary/20"; }
-
-                return (
-                  <div className="mt-4 space-y-2">
-                    <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold ${cls}`}>
-                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.55)]" />
-                      {label}
-                    </span>
-                    {isTrial && userInfo?.premiumTrialExpiresAt && (
-                      <p className="text-[10px] text-muted-foreground">Trial expira {new Date(userInfo.premiumTrialExpiresAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</p>
-                    )}
-                  </div>
-                );
-              })()}
+              {/* Trial expiry */}
+              {userInfo?.role === "admin" && userInfo?.premiumTrialExpiresAt && (
+                <p className="mt-3 text-[10px] text-muted-foreground">
+                  Trial expira {new Date(userInfo.premiumTrialExpiresAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                </p>
+              )}
+            </div>
             </div>
           )}
         </div>
@@ -662,28 +727,85 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="mt-4">
-              {settingsTab === 'profile' && (
+              {/* Tabs */}
+              <div className="flex gap-1 mb-4 border-b border-border pb-3">
+                {(['profile', 'password', 'danger'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setSettingsTab(tab)}
+                    className={cn(
+                      "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
+                      settingsTab === tab
+                        ? tab === 'danger'
+                          ? "bg-danger/10 text-danger border border-danger/30"
+                          : "bg-primary/10 text-primary-light border border-primary/20"
+                        : "text-muted-foreground hover:text-white"
+                    )}
+                  >
+                    {tab === 'profile' ? 'Perfil' : tab === 'password' ? 'Contraseña' : 'Danger Zone'}
+                  </button>
+                ))}
+              </div>
+            {settingsTab === 'profile' && (
                 <div className="rounded-2xl border border-border bg-surface-2 p-5">
-                  <h3 className="text-lg font-semibold text-white">Profile</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">Edit your profile information.</p>
+                  <h3 className="text-lg font-semibold text-white">Perfil</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">Edita tu información de perfil.</p>
                   <div className="mt-4 grid gap-3">
-                    <label className="block"><span className="label">Username</span><input className="input" defaultValue={userInfo?.username || ''} /></label>
-                    <label className="block"><span className="label">Email</span><input className="input" defaultValue={userInfo?.email || ''} /></label>
-                    <label className="block"><span className="label">Avatar URL</span><input className="input" placeholder="https://...jpg/png/webp/gif" /></label>
-                    <div className="flex justify-end"><button className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-surface">Save</button></div>
+                    <label className="block">
+                      <span className="label">Username</span>
+                      <input className="input" value={profileUsername} onChange={e => setProfileUsername(e.target.value)} />
+                    </label>
+                    <label className="block">
+                      <span className="label">Email</span>
+                      <input className="input" type="email" value={profileEmail} onChange={e => setProfileEmail(e.target.value)} />
+                    </label>
+                    <label className="block">
+                      <span className="label">Avatar URL</span>
+                      <input
+                        className="input"
+                        placeholder="https://example.com/avatar.png"
+                        value={profileAvatar}
+                        onChange={e => setProfileAvatar(e.target.value)}
+                      />
+                      {profileAvatar && /^https?:\/\/.+\.(png|jpe?g|webp|gif)(\?.*)?$/i.test(profileAvatar) && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <img src={profileAvatar} alt="Preview" className="h-10 w-10 rounded-full object-cover border border-border" />
+                          <span className="text-xs text-success">Vista previa OK</span>
+                        </div>
+                      )}
+                    </label>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={saveProfile}
+                        disabled={savingProfile}
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-60 transition hover:bg-primary-hover"
+                      >
+                        {savingProfile && <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />}
+                        {savingProfile ? "Guardando..." : "Guardar"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
 
               {settingsTab === 'password' && (
                 <div className="rounded-2xl border border-border bg-surface-2 p-5">
-                  <h3 className="text-lg font-semibold text-white">Change Password</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">Update your account password.</p>
+                  <h3 className="text-lg font-semibold text-white">Cambiar Contraseña</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">Actualiza la contraseña de tu cuenta.</p>
                   <div className="mt-4 grid gap-3">
-                    <label className="block"><span className="label">Current password</span><input type="password" className="input" /></label>
-                    <label className="block"><span className="label">New password</span><input type="password" className="input" /></label>
-                    <label className="block"><span className="label">Confirm new password</span><input type="password" className="input" /></label>
-                    <div className="flex justify-end"><button className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-surface">Change Password</button></div>
+                    <label className="block"><span className="label">Contraseña actual</span><input type="password" className="input" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} /></label>
+                    <label className="block"><span className="label">Nueva contraseña</span><input type="password" className="input" value={newPassword} onChange={e => setNewPassword(e.target.value)} /></label>
+                    <label className="block"><span className="label">Confirmar nueva contraseña</span><input type="password" className="input" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} /></label>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={savePassword}
+                        disabled={savingPassword}
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-60 transition hover:bg-primary-hover"
+                      >
+                        {savingPassword && <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />}
+                        {savingPassword ? "Guardando..." : "Cambiar Contraseña"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
