@@ -20,6 +20,7 @@ interface WebhookConfig {
 const EVENT_LABELS: Record<string, string> = {
   login_success:     "✅ Login Success",
   login_failed:      "❌ Login Failed",
+  login_relogin:     "🔄 Re-Login",
   license_activated: "🔑 License Activated",
   license_generated: "🎫 License Generated",
   hwid_error:        "⚠️ HWID Mismatch",
@@ -29,6 +30,7 @@ const EVENT_LABELS: Record<string, string> = {
 const VARIABLES: Record<string, string> = {
   login_success:     "{username}, {ip}, {appName}",
   login_failed:      "{username}, {ip}, {reason}, {appName}",
+  login_relogin:     "{username}, {ip}, {appName}",
   license_activated: "{licenseKey}, {username}, {ip}, {appName}",
   license_generated: "{count}, {mask}, {appName}",
   hwid_error:        "{username}, {ip}, {appName}",

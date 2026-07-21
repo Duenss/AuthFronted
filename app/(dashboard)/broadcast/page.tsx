@@ -1,249 +1,192 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Copy, Bot, Terminal, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Bot, Megaphone, Plus, Trash2, Send, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/dashboard-shell";
-import { Button, Field } from "@/components/ui";
+import { Button } from "@/components/ui";
+import { apiRequest, getStoredToken } from "@/lib/api";
 import toast from "react-hot-toast";
 
-const COMMAND_TEMPLATES = [
-  {
-    command: "/claimfreelicence {license}",
-    description: "Reclamar una licencia activa desde el bot.",
-  },
-  {
-    command: "/licence generate {user} {duration}",
-    description: "Generar una licencia nueva con la plantilla.",
-  },
-  {
-    command: "/checkhwid {hwid}",
-    description: "Verificar HWID en el sistema de licencias.",
-  },
-  {
-    command: "/licence status {user}",
-    description: "Consultar estado de licencia de un usuario.",
-  },
-  {
-    command: "/license reset {user} {hwid}",
-    description: "Resetear HWID para un usuario con licencia.",
-  },
-  {
-    command: "/ban user {user} {reason}",
-    description: "Banear un usuario específico del sistema.",
-  },
-  {
-    command: "/unban user {user}",
-    description: "Remover ban de un usuario.",
-  },
-  {
-    command: "/license validate {license}",
-    description: "Validar si una licencia es válida.",
-  },
-  {
-    command: "/bot stats",
-    description: "Obtener estadísticas del bot y licencias.",
-  },
-];
+type BroadcastType = "info" | "warning" | "success" | "error";
+
+interface Broadcast {
+  _id: string;
+  message: string;
+  type: BroadcastType;
+  active: boolean;
+  createdAt: string;
+}
+
+const TYPE_STYLES: Record<BroadcastType, string> = {
+  info:    "bg-blue-500/10 text-blue-300 border-blue-500/30",
+  warning: "bg-yellow-500/10 text-yellow-300 border-yellow-500/30",
+  success: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
+  error:   "bg-red-500/10 text-red-300 border-red-500/30",
+};
+
+const TYPE_EMOJI: Record<BroadcastType, string> = {
+  info: "ℹ️", warning: "⚠️", success: "✅", error: "❌",
+};
 
 export default function BotHubPage() {
-  const [tokenType, setTokenType] = useState<"bot" | "webhook">("bot");
-  const [botToken, setBotToken] = useState("");
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [commandPrefix, setCommandPrefix] = useState("/");
-  const [licenseMask, setLicenseMask] = useState("****-****-****-****");
-  const [responseTemplate, setResponseTemplate] = useState("Tu licencia {license} ha sido activada para {username}.");
-  const [customCommands, setCustomCommands] = useState<string[]>([]);
-  const [newCommand, setNewCommand] = useState("");
+  const token = getStoredToken();
+  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [type, setType] = useState<BroadcastType>("info");
+  const [sending, setSending] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  const generatedCommands = useMemo(() => {
-    return COMMAND_TEMPLATES.map((template) => ({
-      ...template,
-      preview: template.command
-        .replace("{license}", "ABCD-EFGH-IJKL-MNOP")
-        .replace("{user}", "usuario123")
-        .replace("{duration}", "30d")
-        .replace("{hwid}", "HWID-1234-ABCD"),
-    }));
-  }, []);
+  const load = useCallback(async () => {
+    if (!token) return;
+    try {
+      const data = await apiRequest<Broadcast[]>("/admin/broadcast/all", { token });
+      setBroadcasts(Array.isArray(data) ? data : []);
+    } catch {
+      // fallback: try public endpoint
+      try {
+        const data = await apiRequest<Broadcast[]>("/admin/broadcast", { token });
+        setBroadcasts(Array.isArray(data) ? data : []);
+      } catch { setBroadcasts([]); }
+    } finally { setLoading(false); }
+  }, [token]);
 
-  const generatedBotCommand = `${commandPrefix}claimfreelicence ${licenseMask}`;
+  useEffect(() => {
+    load();
+    apiRequest<{ role: string }>("/admin/plan-limits", { token })
+      .then(d => { if (d.role === "superadmin") setIsSuperAdmin(true); })
+      .catch(() => {});
+  }, [load, token]);
 
-  const copyText = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    toast.success("Copiado al portapapeles");
-  };
+  const send = useCallback(async () => {
+    if (!message.trim()) { toast.error("Escribe un mensaje"); return; }
+    setSending(true);
+    try {
+      await apiRequest("/admin/broadcast", {
+        method: "POST", token,
+        body: JSON.stringify({ message: message.trim(), type }),
+      });
+      toast.success("Broadcast enviado");
+      setMessage("");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al enviar");
+    } finally { setSending(false); }
+  }, [message, type, token, load]);
 
-  const sampleConfig = useMemo(() => {
-    return `Bot Token: ${botToken || "<BOT_TOKEN>"}\nWebhook URL: ${webhookUrl || "<WEBHOOK_URL>"}\nComando: ${generatedBotCommand}\nRespuesta: ${responseTemplate}`;
-  }, [botToken, webhookUrl, generatedBotCommand, responseTemplate]);
+  const remove = useCallback(async (id: string) => {
+    try {
+      await apiRequest(`/admin/broadcast/${id}`, { method: "DELETE", token });
+      toast.success("Broadcast eliminado");
+      setBroadcasts(prev => prev.filter(b => b._id !== id));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Error al eliminar");
+    }
+  }, [token]);
+
+  const activeBroadcasts = useMemo(() => broadcasts.filter(b => b.active !== false), [broadcasts]);
+  const allBroadcasts    = useMemo(() => broadcasts, [broadcasts]);
 
   return (
     <>
       <PageHeader
         title="BotHub"
-        description="Gestiona y configura tu bot de licencias con comandos personalizados e integración."
+        description="Gestiona mensajes broadcast que aparecen en el panel y en la DLL."
+        action={
+          <Button variant="secondary" onClick={load}>
+            <RefreshCw className="h-4 w-4" />
+            Actualizar
+          </Button>
+        }
       />
 
-      <section className="rounded-[28px] border border-cyan-500/15 bg-gradient-to-br from-[#09131f] via-[#0c1f34] to-[#081523] p-8 shadow-[0_20px_60px_rgba(14,165,233,0.12),inset_0_0_0_1px_rgba(56,189,248,0.08)] backdrop-blur-xl mb-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-white">Configuración del Bot</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Elige entre integración con Bot Token o Webhook URL.</p>
+      {/* ── Crear broadcast ── */}
+      {isSuperAdmin && (
+        <section className="card mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Megaphone className="h-5 w-5 text-primary-light" />
+            <h2 className="text-lg font-semibold text-white">Nuevo Broadcast</h2>
           </div>
-          <Bot className="h-8 w-8 text-cyan-300" />
-        </div>
-
-        <div className="mb-8 grid gap-4">
-          <div className="flex gap-3">
-            <button
-              onClick={() => setTokenType("bot")}
-              className={`flex-1 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                tokenType === "bot"
-                  ? "border-cyan-400 bg-cyan-400/10 text-cyan-200 shadow-[0_0_24px_rgba(56,189,248,0.2)]"
-                  : "border-border bg-surface-2 text-muted-foreground hover:border-cyan-300/50"
-              }`}
-            >
-              Bot Token
-            </button>
-            <button
-              onClick={() => setTokenType("webhook")}
-              className={`flex-1 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
-                tokenType === "webhook"
-                  ? "border-cyan-400 bg-cyan-400/10 text-cyan-200 shadow-[0_0_24px_rgba(56,189,248,0.2)]"
-                  : "border-border bg-surface-2 text-muted-foreground hover:border-cyan-300/50"
-              }`}
-            >
-              Webhook URL
-            </button>
-          </div>
-
-          {tokenType === "bot" ? (
-            <Field
-              label="Bot Token"
-              value={botToken}
-              onChange={(e) => setBotToken(e.target.value)}
-              placeholder="Pega aquí tu bot token de Discord"
-            />
-          ) : (
-            <Field
-              label="Webhook URL"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              placeholder="https://discord.com/api/webhooks/..."
-            />
-          )}
-
-          <label className="block">
-            <span className="label">Prefijo de comandos</span>
-            <input
-              className="input"
-              value={commandPrefix}
-              onChange={(e) => setCommandPrefix(e.target.value)}
-              placeholder="/"
-              maxLength={3}
-            />
-          </label>
-
-          <label className="block">
-            <span className="label">Máscara de licencia</span>
-            <input
-              className="input"
-              value={licenseMask}
-              onChange={(e) => setLicenseMask(e.target.value)}
-              placeholder="****-****-****-****"
-            />
-          </label>
-
-          <label className="block">
-            <span className="label">Plantilla de respuesta</span>
-            <textarea
-              className="input min-h-[100px] resize-none rounded-2xl"
-              value={responseTemplate}
-              onChange={(e) => setResponseTemplate(e.target.value)}
-              placeholder="Tu licencia {license} ha sido activada para {username}."
-            />
-          </label>
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-cyan-500/15 bg-gradient-to-br from-[#09131f] via-[#0c1f34] to-[#081523] p-8 shadow-[0_20px_60px_rgba(14,165,233,0.12),inset_0_0_0_1px_rgba(56,189,248,0.08)] backdrop-blur-xl">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-bold text-white">Comandos disponibles</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Copia cualquier comando para usarlo en tu integración.</p>
-          </div>
-          <Terminal className="h-8 w-8 text-cyan-300" />
-        </div>
-
-        <div className="grid gap-3 lg:grid-cols-2">
-          {generatedCommands.map((item, idx) => (
-            <div
-              key={idx}
-              className="group rounded-2xl border border-cyan-500/10 bg-[#071823]/50 p-4 transition hover:border-cyan-400/30 hover:bg-[#0a1f2e]/70 hover:shadow-[0_10px_30px_rgba(14,165,233,0.1)]"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <p className="font-mono text-sm font-semibold text-cyan-200 break-words">{item.command}</p>
-                  <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{item.description}</p>
-                </div>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-4 gap-2">
+              {(["info","warning","success","error"] as BroadcastType[]).map(t => (
                 <button
-                  type="button"
-                  onClick={() => copyText(item.command)}
-                  className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-[#0b1d2f] px-2.5 py-1.5 text-xs font-semibold text-cyan-200 transition hover:border-cyan-400/50 hover:bg-[#0f2b45]"
+                  key={t}
+                  onClick={() => setType(t)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-semibold capitalize transition ${
+                    type === t ? TYPE_STYLES[t] : "border-border bg-surface-2 text-muted-foreground hover:border-border"
+                  }`}
                 >
-                  <Copy className="h-3 w-3" />
-                  <span className="hidden sm:inline">Copiar</span>
+                  {TYPE_EMOJI[t]} {t}
                 </button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-8 border-t border-cyan-500/10 pt-8">
-          <h3 className="mb-4 text-lg font-semibold text-white">Comandos personalizados</h3>
-          <div className="flex gap-2 mb-4">
-            <input
-              type="text"
-              value={newCommand}
-              onChange={(e) => setNewCommand(e.target.value)}
-              placeholder="/mi-comando {param}"
-              className="input flex-1 rounded-2xl"
-            />
-            <button
-              onClick={() => {
-                if (newCommand.trim()) {
-                  setCustomCommands([...customCommands, newCommand]);
-                  setNewCommand("");
-                  toast.success("Comando agregado");
-                }
-              }}
-              className="inline-flex items-center gap-2 rounded-2xl bg-cyan-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-600 transition"
-            >
-              <Plus className="h-4 w-4" />
-              Agregar
-            </button>
-          </div>
-
-          {customCommands.length > 0 && (
-            <div className="grid gap-2">
-              {customCommands.map((cmd, idx) => (
-                <div key={idx} className="flex items-center justify-between rounded-2xl border border-cyan-500/10 bg-[#071823]/50 px-4 py-3">
-                  <p className="font-mono text-sm text-cyan-200">{cmd}</p>
-                  <button
-                    onClick={() => {
-                      setCustomCommands(customCommands.filter((_, i) => i !== idx));
-                      toast.success("Comando eliminado");
-                    }}
-                    className="text-red-400 hover:text-red-300 transition"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
               ))}
             </div>
-          )}
+            <textarea
+              value={message}
+              onChange={e => setMessage(e.target.value)}
+              placeholder="Escribe el mensaje del broadcast..."
+              className="input min-h-[90px] resize-none"
+            />
+            <div className="flex justify-end">
+              <Button onClick={send} loading={sending}>
+                <Send className="h-4 w-4" />
+                Enviar Broadcast
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Broadcasts activos ── */}
+      <section className="card mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Bot className="h-5 w-5 text-primary-light" />
+            <h2 className="text-lg font-semibold text-white">Broadcasts Activos</h2>
+          </div>
+          <span className="text-xs text-muted-foreground">{activeBroadcasts.length} activos</span>
         </div>
+
+        {loading ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">Cargando...</p>
+        ) : activeBroadcasts.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">No hay broadcasts activos.</p>
+        ) : (
+          <div className="grid gap-3">
+            {activeBroadcasts.map(b => (
+              <div key={b._id} className={`flex items-start justify-between gap-3 rounded-xl border p-4 ${TYPE_STYLES[b.type as BroadcastType] || TYPE_STYLES.info}`}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold uppercase tracking-wider">{TYPE_EMOJI[b.type as BroadcastType]} {b.type}</span>
+                    <span className="text-[10px] text-muted-foreground">{new Date(b.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <p className="text-sm text-white">{b.message}</p>
+                </div>
+                {isSuperAdmin && (
+                  <button onClick={() => remove(b._id)} className="text-red-400 hover:text-red-300 transition flex-shrink-0 mt-0.5">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
+
+      {/* ── Historial completo (solo superadmin) ── */}
+      {isSuperAdmin && allBroadcasts.length > activeBroadcasts.length && (
+        <section className="card">
+          <h2 className="text-lg font-semibold text-white mb-4">Historial</h2>
+          <div className="grid gap-2">
+            {allBroadcasts.filter(b => b.active === false).map(b => (
+              <div key={b._id} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2 px-4 py-3 opacity-50">
+                <p className="text-sm text-muted-foreground truncate">{TYPE_EMOJI[b.type as BroadcastType]} {b.message}</p>
+                <span className="text-[10px] text-muted shrink-0">{new Date(b.createdAt).toLocaleDateString()}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }

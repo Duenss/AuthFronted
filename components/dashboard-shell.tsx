@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { clearStoredToken, getStoredToken, apiRequest } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 const navItems = [
@@ -232,11 +232,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     setSelectedApp(app);
     localStorage.setItem("authrd_selected_app", app._id);
     setAppDropdownOpen(false);
-    try {
-      // trigger refresh for server components / pages that depend on selected app
-      router.refresh();
-    } catch (e) {}
-    // emit a custom event so other client code can react
+    try { router.refresh(); } catch (e) {}
     try { window.dispatchEvent(new CustomEvent('authrd_app_changed', { detail: app })); } catch (e) {}
   }
 
@@ -291,20 +287,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     router.push("/login");
   }
 
-  const initial = userInfo?.username?.[0]?.toUpperCase() || "U";
-  const avatarUrl = typeof userInfo?.avatar === "string" ? userInfo.avatar.trim() : "";
-  const hasAvatarUrl = /^(https?:\/\/.*\.(?:png|jpe?g|webp|gif)(\?.*)?)$/i.test(avatarUrl);
-  const roleLabel = userInfo?.role
-    ? userInfo.role === "superadmin"
-      ? "Super Admin"
-      : userInfo.role === "admin"
-      ? "Admin"
-      : userInfo.role === "manager"
-      ? "Manager"
+  const initial = useMemo(() => userInfo?.username?.[0]?.toUpperCase() || "U", [userInfo?.username]);
+  const avatarUrl = useMemo(() => typeof userInfo?.avatar === "string" ? userInfo.avatar.trim() : "", [userInfo?.avatar]);
+  const hasAvatarUrl = useMemo(() => /^(https?:\/\/.*\.(?:png|jpe?g|webp|gif)(\?.*)?)$/i.test(avatarUrl), [avatarUrl]);
+  const roleLabel = useMemo(() => userInfo?.role
+    ? userInfo.role === "superadmin" ? "Super Admin"
+      : userInfo.role === "admin" ? "Admin"
+      : userInfo.role === "manager" ? "Manager"
       : userInfo.role
-    : "Usuario";
+    : "Usuario", [userInfo?.role]);
 
-  const enabledManagerModules = Object.entries(userPermissions || defaultPermissions)
+  const enabledManagerModules = useMemo(() => Object.entries(userPermissions || defaultPermissions)
     .filter(([, enabled]) => enabled)
     .map(([key]) => {
       switch (key) {
@@ -315,7 +308,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         case 'viewStats': return 'Estadísticas';
         default: return key;
       }
-    });
+    }), [userPermissions]);
 
   if (!userLoaded) {
     return (

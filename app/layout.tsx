@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 import Script from "next/script";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  preload: true,
+});
 
 export const metadata: Metadata = {
   title: "AuthRD - License & Auth Management",
@@ -12,7 +20,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className="dark">
-      <body>
+      <body className={inter.variable}>
         {/* Console & DevTools protection — only active in production */}
         <Script id="console-protection" strategy="beforeInteractive">{`
           (function() {
@@ -55,10 +63,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           position="top-right"
           toastOptions={{
             style: {
-              background: "#1a1a1a",
-              border: "1px solid #2a2a2a",
-              color: "#fff"
-            }
+              background: "#06111e",
+              border: "1px solid rgba(0,149,255,0.2)",
+              color: "#fff",
+              boxShadow: "0 0 20px rgba(0,149,255,0.1)",
+              borderRadius: "12px",
+            },
+            success: { iconTheme: { primary: "#22c55e", secondary: "#06111e" } },
+            error:   { iconTheme: { primary: "#ef4444", secondary: "#06111e" } },
           }}
         />
       </body>

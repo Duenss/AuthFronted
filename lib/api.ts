@@ -1,14 +1,19 @@
-function getApiUrl() {
+// Caché del API URL — se computa una sola vez para evitar re-evaluar en cada request
+let _cachedApiUrl: string | null = null;
+
+function getApiUrl(): string {
+  if (_cachedApiUrl) return _cachedApiUrl;
   const configuredUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (configuredUrl) {
-    return configuredUrl.replace(/\/+$/, '');
+    _cachedApiUrl = configuredUrl.replace(/\/+$/, '');
+    return _cachedApiUrl;
   }
-
   if (typeof window !== 'undefined') {
-    return `${window.location.origin}/api`;
+    _cachedApiUrl = `${window.location.origin}/api`;
+    return _cachedApiUrl;
   }
-
-  return 'https://authrd-api.up.railway.app/api';
+  _cachedApiUrl = 'https://authrd-api.up.railway.app/api';
+  return _cachedApiUrl;
 }
 
 type ApiOptions = RequestInit & { token?: string | null };
