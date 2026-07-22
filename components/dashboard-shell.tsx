@@ -232,8 +232,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     setSelectedApp(app);
     localStorage.setItem("authrd_selected_app", app._id);
     setAppDropdownOpen(false);
-    try { router.refresh(); } catch (e) {}
-    try { window.dispatchEvent(new CustomEvent('authrd_app_changed', { detail: app })); } catch (e) {}
+    
+    // Force full page reload to refresh all data with new app context
+    window.location.reload();
   }
 
   // admin y superadmin no tienen límites
@@ -558,13 +559,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             /* Expanded: card completo con rol y expiración */
             <div className="rounded-[28px] border border-[#16486a] bg-[#09101d] p-4 shadow-[inset_0_0_0_1px_rgba(56,189,248,0.08)]">
               <div className="flex items-center gap-3">
-                <div className="relative w-16 h-16 rounded-[28px] bg-[#0c1c32] border border-cyan-500/10 shadow-[0_0_18px_rgba(56,189,248,0.14)] overflow-hidden flex items-center justify-center">
-                  {hasAvatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-2xl font-bold text-cyan-300">{initial}</span>
-                  )}
-                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]" />
+                <div className="relative flex-shrink-0">
+                  <div className="w-16 h-16 rounded-[28px] bg-[#0c1c32] border border-cyan-500/10 shadow-[0_0_18px_rgba(56,189,248,0.14)] overflow-hidden flex items-center justify-center">
+                    {hasAvatarUrl ? (
+                      <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-2xl font-bold text-cyan-300">{initial}</span>
+                    )}
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-400 border-2 border-[#09101d] shadow-[0_0_12px_rgba(16,185,129,0.7)]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   {/* Badge de rol — arriba */}
@@ -573,13 +576,30 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     const isTrial = role === "admin" && !!userInfo?.premiumTrialExpiresAt;
                     let label = "Normal";
                     let cls   = "bg-surface-3 text-muted-foreground border-border";
-                    if (role === "superadmin")            { label = "Super Admin";   cls = "bg-danger/10 text-danger border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.25)]"; }
-                    else if (role === "admin" && isTrial) { label = "Premium Trial"; cls = "bg-warning/10 text-warning border-warning/20"; }
-                    else if (role === "admin")            { label = "Premium";       cls = "bg-success/10 text-success border-success/20"; }
-                    else if (role === "manager")          { label = "Manager";       cls = "bg-primary/10 text-primary-light border-primary/20"; }
+                    let dotCls = "bg-gray-400";
+                    if (role === "superadmin") { 
+                      label = "Super Admin"; 
+                      cls = "bg-danger/10 text-danger border-danger/30 shadow-[0_0_8px_rgba(239,68,68,0.25)]"; 
+                      dotCls = "bg-danger shadow-[0_0_6px_rgba(239,68,68,0.8)]";
+                    }
+                    else if (role === "admin" && isTrial) { 
+                      label = "Premium Trial"; 
+                      cls = "bg-warning/10 text-warning border-warning/20"; 
+                      dotCls = "bg-warning shadow-[0_0_6px_rgba(251,191,36,0.6)]";
+                    }
+                    else if (role === "admin") { 
+                      label = "Premium"; 
+                      cls = "bg-success/10 text-success border-success/20"; 
+                      dotCls = "bg-success shadow-[0_0_6px_rgba(16,185,129,0.6)]";
+                    }
+                    else if (role === "manager") { 
+                      label = "Manager"; 
+                      cls = "bg-primary/10 text-primary-light border-primary/20"; 
+                      dotCls = "bg-primary-light shadow-[0_0_6px_rgba(56,189,248,0.6)]";
+                    }
                     return (
                       <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold mb-1 ${cls}`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${role === "superadmin" ? "bg-danger shadow-[0_0_6px_rgba(239,68,68,0.8)]" : "bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.6)]"}`} />
+                        <span className={`h-1.5 w-1.5 rounded-full ${dotCls}`} />
                         {label}
                       </span>
                     );

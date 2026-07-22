@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Plus, RefreshCcw, Trash2, Ban, ShieldCheck, MonitorX, X } from "lucide-react";
+import { Plus, RefreshCcw, Trash2, Ban, ShieldCheck, MonitorX, X, KeyRound } from "lucide-react";
 import { PageHeader } from "@/components/dashboard-shell";
 import { Badge, Button } from "@/components/ui";
 import { apiRequest, getStoredToken } from "@/lib/api";
@@ -48,6 +48,9 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [resetUser, setResetUser] = useState<AppUser | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [resettingPassword, setResettingPassword] = useState(false);
 
   // Form state
   const [newUsername, setNewUsername] = useState("");
@@ -184,6 +187,32 @@ export default function UsersPage() {
     }
   }
 
+  async function submitPasswordReset() {
+    if (!resetUser) return;
+    if (!resetPasswordValue.trim()) {
+      toast.error("La contraseña es requerida");
+      return;
+    }
+    const appId = getAppId();
+    const token = getStoredToken();
+    if (!token || !appId) return;
+    setResettingPassword(true);
+    try {
+      await apiRequest(`/users/${resetUser._id}/reset-password`, {
+        method: "POST",
+        token,
+        body: JSON.stringify({ appId, password: resetPasswordValue }),
+      });
+      toast.success(`Contraseña de ${resetUser.username} actualizada`);
+      setResetUser(null);
+      setResetPasswordValue("");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Error reseteando contraseña");
+    } finally {
+      setResettingPassword(false);
+    }
+  }
+
   async function deleteUser(id: string) {
     const appId = getAppId();
     const token = getStoredToken();
@@ -254,6 +283,39 @@ export default function UsersPage() {
               <div className="mt-2">
                 <Button className="w-full" loading={creating} onClick={createUser}>Agregar Usuario</Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => { setResetUser(null); setResetPasswordValue(""); }} />
+          <div className="relative w-[420px] max-w-[95%] rounded-xl bg-surface-2 p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold">Resetear contraseña</h3>
+              <button className="text-muted-foreground hover:text-white transition-colors" onClick={() => { setResetUser(null); setResetPasswordValue(""); }}>
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Usuario: <span className="text-white font-medium">{resetUser.username}</span>
+            </p>
+            <label className="block">
+              <span className="label text-xs uppercase tracking-wider text-muted-foreground">Nueva contraseña</span>
+              <input
+                className="input mt-1"
+                type="password"
+                value={resetPasswordValue}
+                onChange={(e) => setResetPasswordValue(e.target.value)}
+                placeholder="Ej: 1"
+                autoComplete="new-password"
+              />
+            </label>
+            <div className="mt-4">
+              <Button className="w-full" loading={resettingPassword} onClick={submitPasswordReset}>
+                Guardar contraseña
+              </Button>
             </div>
           </div>
         </div>
@@ -334,6 +396,13 @@ export default function UsersPage() {
                           title={user.status === "banned" ? "Desbanear" : "Banear"}
                         >
                           {user.status === "banned" ? <ShieldCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                        </button>
+                        <button
+                          onClick={() => { setResetUser(user); setResetPasswordValue(""); }}
+                          className="p-1.5 rounded-md text-primary-light hover:bg-primary/10 transition-all"
+                          title="Resetear contraseña"
+                        >
+                          <KeyRound className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => resetHwid(user._id)}
