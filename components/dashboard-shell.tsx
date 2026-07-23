@@ -893,19 +893,19 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
               {/* Bell Dropdown */}
               {bellOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 z-50 rounded-lg bg-surface-2 border border-border shadow-2xl overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <div className="absolute right-0 top-full mt-2 w-80 z-[100] rounded-lg bg-surface-2 border border-border shadow-[0_20px_80px_rgba(0,0,0,0.6)] overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface-2">
                     <span className="text-sm font-semibold text-white">Notificaciones</span>
                     <button onClick={() => setBellOpen(false)} className="text-muted hover:text-white">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                   {broadcasts.length === 0 ? (
-                    <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                    <div className="px-4 py-6 text-center text-sm text-muted-foreground bg-surface-2">
                       Sin notificaciones activas
                     </div>
                   ) : (
-                    <div className="max-h-64 overflow-y-auto">
+                    <div className="max-h-64 overflow-y-auto bg-surface-2">
                       {broadcasts.map((b, i) => (
                         <div key={b._id || i} className="px-4 py-3 border-b border-border/50 last:border-0">
                           <p className={cn("text-xs font-medium", broadcastTypeColor[b.type] || "text-blue-300")}>
