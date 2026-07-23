@@ -382,7 +382,7 @@ export default function LicensesPage() {
           </Button>
         </div>
 
-        {/* Floating action menu rendered at fixed position so it's not clipped by overflow */}
+        {/* Floating action menu rendered at absolute position relative to document */}
         {actionMenuOpen && actionMenuPos && (
           <>
             {/* Backdrop */}
@@ -392,8 +392,12 @@ export default function LicensesPage() {
             />
             {/* Menu */}
             <div
-              style={{ top: actionMenuPos.top, left: actionMenuPos.left }}
-              className="fixed z-[101] w-48 rounded-xl border border-border bg-surface-2 p-2 shadow-lg"
+              style={{ 
+                position: 'absolute',
+                top: `${actionMenuPos.top}px`, 
+                left: `${actionMenuPos.left}px`,
+              }}
+              className="z-[101] w-48 rounded-xl border border-border bg-surface-2 p-2 shadow-lg"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -522,7 +526,10 @@ export default function LicensesPage() {
                           const el = actionButtonRefs.current[license.key];
                           if (!el) return;
                           const rect = el.getBoundingClientRect();
-                          setActionMenuPos({ top: rect.bottom + 8, left: Math.max(8, rect.right - 200) });
+                          // Calculate position relative to viewport, accounting for scroll
+                          const top = rect.bottom + window.scrollY + 8;
+                          const left = Math.max(8, rect.right + window.scrollX - 192); // 192px = w-48
+                          setActionMenuPos({ top, left });
                           setActionMenuOpen((current) => (current === license.key ? null : license.key));
                           e.stopPropagation();
                         }}
