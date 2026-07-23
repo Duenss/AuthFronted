@@ -277,7 +277,6 @@ bool Auth::IsBanned() {
               <span className="label">Credenciales API</span>
               <Button
                 variant="ghost"
-                size="sm"
                 onClick={() => {
                   const creds = `static const char* APP_ID     = "${app?.appId || 'APP_ID'}";\nstatic const char* APP_SECRET = "${app?.appSecret || 'APP_SECRET'}";\nstatic const char* API_HOST   = "${apiUrl.replace('https://', '').replace('http://', '').replace('/api', '')}";\nstatic const int   API_PORT   = 443;\nstatic const bool  USE_HTTPS  = true;`;
                   navigator.clipboard.writeText(creds).then(() => toast.success("Credenciales copiadas"));
