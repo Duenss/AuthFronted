@@ -381,63 +381,61 @@ export default function LicensesPage() {
             Actualizar
           </Button>
         </div>
-
-        {/* Floating action menu rendered at absolute position relative to document */}
-        {actionMenuOpen && actionMenuPos && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-[100]"
-              onClick={() => setActionMenuOpen(null)}
-            />
-            {/* Menu */}
-            <div
-              style={{ 
-                position: 'absolute',
-                top: `${actionMenuPos.top}px`, 
-                left: `${actionMenuPos.left}px`,
-              }}
-              className="z-[101] w-48 rounded-xl border border-border bg-surface-2 p-2 shadow-lg"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
-                onClick={() => { if (actionMenuOpen) copyLicenseKey(actionMenuOpen); }}
-              >
-                <Copy className="h-4 w-4" /> Copiar clave
-              </button>
-              <button
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
-                onClick={() => { if (actionMenuOpen) resetLicenseHwid(actionMenuOpen); }}
-              >
-                <RefreshCcw className="h-4 w-4" /> Reiniciar HWID
-              </button>
-              <button
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
-                onClick={() => { if (actionMenuOpen) pauseLicense(actionMenuOpen); }}
-              >
-                <PauseCircle className="h-4 w-4" /> Pausar licencia
-              </button>
-              <button
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
-                onClick={() => { if (actionMenuOpen) banLicense(actionMenuOpen); }}
-              >
-                <Ban className="h-4 w-4" /> Banear licencia
-              </button>
-              <button
-                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-danger hover:bg-surface-3"
-                onClick={() => { if (actionMenuOpen) deleteLicense(actionMenuOpen); }}
-              >
-                <Trash2 className="h-4 w-4" /> Eliminar
-              </button>
-            </div>
-          </>
-        )}
-
       </section>
 
-        
+      {/* Floating action menu rendered at absolute position relative to document */}
+      {actionMenuOpen && actionMenuPos && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-[100]"
+            onClick={() => setActionMenuOpen(null)}
+          />
+          {/* Menu */}
+          <div
+            style={{ 
+              position: 'absolute',
+              top: `${actionMenuPos.top}px`, 
+              left: `${actionMenuPos.left}px`,
+            }}
+            className="z-[101] w-48 rounded-xl border border-border bg-surface-2 p-2 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
+              onClick={() => { if (actionMenuOpen) copyLicenseKey(actionMenuOpen); }}
+            >
+              <Copy className="h-4 w-4" /> Copiar clave
+            </button>
+            <button
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
+              onClick={() => { if (actionMenuOpen) resetLicenseHwid(actionMenuOpen); }}
+            >
+              <RefreshCcw className="h-4 w-4" /> Reiniciar HWID
+            </button>
+            <button
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
+              onClick={() => { if (actionMenuOpen) pauseLicense(actionMenuOpen); }}
+            >
+              <PauseCircle className="h-4 w-4" /> Pausar licencia
+            </button>
+            <button
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
+              onClick={() => { if (actionMenuOpen) banLicense(actionMenuOpen); }}
+            >
+              <Ban className="h-4 w-4" /> Banear licencia
+            </button>
+            <button
+              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-danger hover:bg-surface-3"
+              onClick={() => { if (actionMenuOpen) deleteLicense(actionMenuOpen); }}
+            >
+              <Trash2 className="h-4 w-4" /> Eliminar
+            </button>
+          </div>
+        </>
+      )}
 
+      
       {/* Table */}
       <section className="card">
         {/* Filter Tabs */}
@@ -519,23 +517,25 @@ export default function LicensesPage() {
                     <td className="px-3 py-4 text-muted-foreground text-xs">{formatDate(license.createdAt)}</td>
                     <td className="px-3 py-4 text-right relative">
                       <Button
-                        variant="ghost"
-                        className="px-2"
-                        ref={(el) => { actionButtonRefs.current[license.key] = el; }}
-                        onClick={(e) => {
-                          const el = actionButtonRefs.current[license.key];
-                          if (!el) return;
-                          const rect = el.getBoundingClientRect();
-                          // Calculate position relative to viewport, accounting for scroll
-                          const top = rect.bottom + window.scrollY + 8;
-                          const left = Math.max(8, rect.right + window.scrollX - 192); // 192px = w-48
-                          setActionMenuPos({ top, left });
-                          setActionMenuOpen((current) => (current === license.key ? null : license.key));
-                          e.stopPropagation();
-                        }}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+  variant="ghost"
+  className="px-2"
+  ref={(el) => { actionButtonRefs.current[license.key] = el; }}
+  onClick={(e) => {
+    const el = actionButtonRefs.current[license.key];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    
+    // Nueva versión corregida
+    const top = rect.bottom + 8;
+    const left = Math.max(8, rect.right - 192); // 192px ≈ ancho del menú
+
+    setActionMenuPos({ top, left });
+    setActionMenuOpen((current) => (current === license.key ? null : license.key));
+    e.stopPropagation();
+  }}
+>
+  <MoreHorizontal className="h-4 w-4" />
+</Button>
                     </td>
                   </tr>
                 ))
