@@ -270,15 +270,33 @@ bool Auth::IsBanned() {
       {/* Config */}
       <section className="card mb-6">
         <h2 className="text-lg font-semibold mb-4">Configuración</h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4">
+          {/* API Credentials Block */}
           <div>
-            <span className="label">APP ID</span>
-            <p className="input font-mono text-sm text-primary-light">{app?.appId || "Cargando..."}</p>
+            <div className="flex items-center justify-between mb-2">
+              <span className="label">Credenciales API</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const creds = `static const char* APP_ID     = "${app?.appId || 'APP_ID'}";\nstatic const char* APP_SECRET = "${app?.appSecret || 'APP_SECRET'}";\nstatic const char* API_HOST   = "${apiUrl.replace('https://', '').replace('http://', '').replace('/api', '')}";\nstatic const int   API_PORT   = 443;\nstatic const bool  USE_HTTPS  = true;`;
+                  navigator.clipboard.writeText(creds).then(() => toast.success("Credenciales copiadas"));
+                }}
+              >
+                <Copy className="h-4 w-4" />
+                Copiar
+              </Button>
+            </div>
+            <pre className="rounded-lg border border-border bg-surface-2 p-4 font-mono text-xs leading-relaxed text-primary-light overflow-x-auto">
+{`static const char* APP_ID     = "${app?.appId || 'APP_ID'}";
+static const char* APP_SECRET = "${app?.appSecret || 'APP_SECRET'}";
+static const char* API_HOST   = "${apiUrl.replace('https://', '').replace('http://', '').replace('/api', '')}";
+static const int   API_PORT   = 443;
+static const bool  USE_HTTPS  = true;`}
+            </pre>
           </div>
-          <div>
-            <span className="label">APP SECRET</span>
-            <p className="input font-mono text-sm text-muted-foreground">{"•".repeat(16)}</p>
-          </div>
+
+          {/* Build mode */}
           <div>
             <span className="label">Build mode</span>
             <div className="flex gap-2">
@@ -286,13 +304,15 @@ bool Auth::IsBanned() {
               <Button variant={buildMode === "dll" ? "secondary" : "ghost"} onClick={() => setBuildMode("dll")}>DLL</Button>
             </div>
           </div>
-          <label className="block md:col-span-3">
+
+          {/* API URL */}
+          <label className="block">
             <span className="label">API URL</span>
             <input
               className="input"
               value={apiUrl}
               onChange={(e) => setApiUrl(e.target.value)}
-              placeholder="https://auchrd.netlify.app/api"
+              placeholder="https://authrd-api.up.railway.app/api"
             />
           </label>
         </div>

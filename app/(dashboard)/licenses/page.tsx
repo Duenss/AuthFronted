@@ -67,6 +67,8 @@ export default function LicensesPage() {
   const [actionMenuPos, setActionMenuPos] = useState<{ top: number; left: number } | null>(null);
   const actionButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
+  const [subscriptions, setSubscriptions] = useState<{ _id: string; name: string; level: number }[]>([]);
+
   // Form state
   const [quantity, setQuantity] = useState("1");
   const [mask, setMask] = useState("****-****-****-****");
@@ -153,7 +155,6 @@ export default function LicensesPage() {
     } catch {}
   }, [mask]);
 
-  const [subscriptions, setSubscriptions] = useState<{ _id: string; name: string; level: number }[]>([]);
 
   // Load subscriptions for current app
   useEffect(() => {
@@ -383,42 +384,50 @@ export default function LicensesPage() {
 
         {/* Floating action menu rendered at fixed position so it's not clipped by overflow */}
         {actionMenuOpen && actionMenuPos && (
-          <div
-            style={{ top: actionMenuPos.top, left: actionMenuPos.left }}
-            className="fixed z-[9999] w-48 rounded-xl border border-border bg-surface-2 p-2 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
-              onClick={() => { if (actionMenuOpen) copyLicenseKey(actionMenuOpen); }}
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 z-[100]"
+              onClick={() => setActionMenuOpen(null)}
+            />
+            {/* Menu */}
+            <div
+              style={{ top: actionMenuPos.top, left: actionMenuPos.left }}
+              className="fixed z-[101] w-48 rounded-xl border border-border bg-surface-2 p-2 shadow-lg"
+              onClick={(e) => e.stopPropagation()}
             >
-              <Copy className="h-4 w-4" /> Copiar clave
-            </button>
-            <button
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
-              onClick={() => { if (actionMenuOpen) resetLicenseHwid(actionMenuOpen); }}
-            >
-              <RefreshCcw className="h-4 w-4" /> Reiniciar HWID
-            </button>
-            <button
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
-              onClick={() => { if (actionMenuOpen) pauseLicense(actionMenuOpen); }}
-            >
-              <PauseCircle className="h-4 w-4" /> Pausar licencia
-            </button>
-            <button
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
-              onClick={() => { if (actionMenuOpen) banLicense(actionMenuOpen); }}
-            >
-              <Ban className="h-4 w-4" /> Banear licencia
-            </button>
-            <button
-              className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-danger hover:bg-surface-3"
-              onClick={() => { if (actionMenuOpen) deleteLicense(actionMenuOpen); }}
-            >
-              <Trash2 className="h-4 w-4" /> Eliminar
-            </button>
-          </div>
+              <button
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
+                onClick={() => { if (actionMenuOpen) copyLicenseKey(actionMenuOpen); }}
+              >
+                <Copy className="h-4 w-4" /> Copiar clave
+              </button>
+              <button
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
+                onClick={() => { if (actionMenuOpen) resetLicenseHwid(actionMenuOpen); }}
+              >
+                <RefreshCcw className="h-4 w-4" /> Reiniciar HWID
+              </button>
+              <button
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
+                onClick={() => { if (actionMenuOpen) pauseLicense(actionMenuOpen); }}
+              >
+                <PauseCircle className="h-4 w-4" /> Pausar licencia
+              </button>
+              <button
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-surface-3"
+                onClick={() => { if (actionMenuOpen) banLicense(actionMenuOpen); }}
+              >
+                <Ban className="h-4 w-4" /> Banear licencia
+              </button>
+              <button
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-danger hover:bg-surface-3"
+                onClick={() => { if (actionMenuOpen) deleteLicense(actionMenuOpen); }}
+              >
+                <Trash2 className="h-4 w-4" /> Eliminar
+              </button>
+            </div>
+          </>
         )}
 
       </section>
